@@ -53,5 +53,18 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
 /// YOUR JOB: Finish sys_task_info to pass testcases
 pub fn sys_task_info(_ti: *mut TaskInfo) -> isize {
     trace!("kernel: sys_task_info");
-    -1
+    if ti.is_null() {
+        return 1 as isize;
+    }
+    unsafe {
+        (*ti).status = TaskStatus::Running;
+        TaskManager::with(|tm| {
+            let inner = tm.inner.exclusive_access();
+            let current = inner.current_task;
+            (*ti).status = inner.tasks[current].task_status;
+            (*ti).syscall_times = inner.tasks[current].syscall_times;
+            (*ti).time = inner.tasks[current].time;
+        });
+    }
+    0 as isize
 }
