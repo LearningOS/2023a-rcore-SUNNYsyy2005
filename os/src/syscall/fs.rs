@@ -1,9 +1,17 @@
 //! File and filesystem-related syscalls
 
+use crate::{task::TASK_MANAGER, syscall::SYSCALL_WRITE};
+
+
 const FD_STDOUT: usize = 1;
 
 /// write buf of length `len`  to a file with `fd`
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
+    {
+        let mut inner = TASK_MANAGER.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].syscall_count[SYSCALL_WRITE] += 1;
+    }
     trace!("kernel: sys_write");
     match fd {
         FD_STDOUT => {
